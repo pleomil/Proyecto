@@ -15,13 +15,14 @@ train_size = int(0.7 * len(dataset))
 val_size = int(0.2 * len(dataset))
 test_size = len(dataset) - train_size - val_size  # Ajusta el tamaño restante
 train_subset, val_subset, test = random_split(dataset, [train_size, val_size, test_size])
-train_loader = DataLoader(train_subset, batch_size=16, shuffle=True)
-val_loader = DataLoader(val_subset, batch_size=16, shuffle=True  )
+train_loader = DataLoader(train_subset, batch_size=8, shuffle=True)
+val_loader = DataLoader(val_subset, batch_size=8, shuffle=True  )
 
 
 
 model = ViTClassifier(num_classes=3)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 model.to(device)
 
 
@@ -33,8 +34,8 @@ optimizer = optim.Adam(model.parameters(), lr=0.0001)
 train_losses, val_losses = [], []
 train_accuracies, val_accuracies = [], []
 
-num_epochs = 10
-
+num_epochs = 15
+best_val_loss = float("inf")
 # Función de entrenamiento
 for epoch in range(num_epochs):
     model.train()
@@ -74,6 +75,11 @@ for epoch in range(num_epochs):
 
     val_losses.append(val_loss / len(val_loader))
     val_accuracies.append(val_correct / val_total)
+    # Guardar el mejor modelo basado en la pérdida de validación
+    if val_loss / len(val_loader) < best_val_loss:
+        best_val_loss = val_loss / len(val_loader)
+        print(f'Saving new model at {val_loss:.4f} val_loss')
+        torch.save(model.state_dict(), "models/best_model_ViT_multiclass.pth")
 
     print(f"Epoch [{epoch+1}/{num_epochs}] - Train Loss: {train_losses[-1]:.4f}, Train Acc: {train_accuracies[-1]:.4f}, "
           f"Val Loss: {val_losses[-1]:.4f}, Val Acc: {val_accuracies[-1]:.4f}")
